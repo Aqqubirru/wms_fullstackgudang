@@ -51,7 +51,6 @@ npm run dev
 
 ### 💻 Frontend
 
-```bash
 Copy
 Edit
 cd client
