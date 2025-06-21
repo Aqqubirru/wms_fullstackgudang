@@ -6,6 +6,7 @@
   <img src="https://img.shields.io/badge/Status-Completed-brightgreen" />
   <img src="https://img.shields.io/badge/Backend-Express.js-blue" />
   <img src="https://img.shields.io/badge/Frontend-React.js-lightblue" />
+  <img src="https://img.shields.io/badge/Backend-MongoDB-green" />
 </p>
 
 ---
@@ -46,14 +47,13 @@
 ### 🔧 Backend
 
 ```bash
-cd server
-npm install
-npm run dev
+cd backend
+node app.js
 
 ### 💻 Frontend
 
 Copy
 Edit
-cd client
+cd frontend
 npm install
-npm start
+npm run dev
