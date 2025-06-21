@@ -42,7 +42,7 @@
 
 ---
 
-###💬 Author
+## 💬 Author
 
 ✍️ Aqbil (Aqqubirru)
 
