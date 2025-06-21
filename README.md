@@ -42,6 +42,16 @@
 
 ---
 
+###💬 Author
+
+✍️ Aqbil (Aqqubirru)
+
+📧 Email: aqbilhasyarasyadi21@gmail.com
+
+📱 Instagram: <a href="https://instagram.com/jbiel.hr" target="_blank">@jbiel.hr</a>
+
+🎵 TikTok: <a href="https://www.tiktok.com/@zebiel21" target="_blank">@zeeb_21</a>
+
 ## ⚙️ How to Run
 
 ### 🔧 Backend
