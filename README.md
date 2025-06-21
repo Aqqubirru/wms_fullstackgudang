@@ -6,7 +6,7 @@
   <img src="https://img.shields.io/badge/Status-Completed-brightgreen" />
   <img src="https://img.shields.io/badge/Backend-Express.js-blue" />
   <img src="https://img.shields.io/badge/Frontend-React.js-lightblue" />
-  <img src="https://img.shields.io/badge/Backend-MongoDB-green" />
+  <img src="https://img.shields.io/badge/Database-MongoDB-green" />
 </p>
 
 ---
