@@ -7,7 +7,7 @@ import {
     LogOut,
     FileClock,
 } from "lucide-react";
-import SupzGLogo from "../assets/Logo/SupzG-Logo-White.svg";
+import SupzGLogo from "../assets/Logo/SupzG-Logo-White.png";
 
 export default function Sidebar({ isOpen, onClose }) {
     const location = useLocation();

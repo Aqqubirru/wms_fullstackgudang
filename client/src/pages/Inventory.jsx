@@ -1,8 +1,11 @@
 /**
  * client/src/pages/Inventory.jsx
- * Halaman inventaris barang yang menampilkan daftar produk, kategori, dan lokasi
- * Memungkinkan filter kategori, tambah kategori, tambah produk, dan edit produk
- * Menggunakan API untuk mengambil dan mengelola data produk, kategori, dan lokasi
+ * ---
+ * Komponen ini berfungsi sebagai halaman utama untuk manajemen inventaris.
+ * Telah disempurnakan untuk:
+ * - Responsivitas yang lebih baik di semua ukuran layar.
+ * - Mengatasi masalah scroll saat modal aktif.
+ * - Logika unggah file yang lebih robust.
  */
 
 import { useState, useEffect } from "react";
@@ -10,307 +13,487 @@ import toast from "react-hot-toast";
 import API from "../api/axiosInstance";
 import { getCategories, addCategory } from "../api/categories";
 
+// Base URL untuk gambar agar mudah diubah. Sebaiknya ini disimpan di file .env.
+const IMAGE_BASE_URL = "http://localhost:5000";
+
 export default function Inventory() {
-  // State untuk mengatur tampilan modal kategori, produk, dan edit produk
+  // --- STATE MANAGEMENT ---
   const [showCategoryModal, setShowCategoryModal] = useState(false);
   const [showProductModal, setShowProductModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
-
-  // State untuk filter kategori yang dipilih
   const [selectedCategoryFilter, setSelectedCategoryFilter] = useState("");
-
-  // State untuk menyimpan data kategori, produk, lokasi
   const [categories, setCategories] = useState([]);
   const [items, setItems] = useState([]);
   const [locations, setLocations] = useState([]);
-
-  // State untuk input nama kategori baru
   const [newCategoryName, setNewCategoryName] = useState("");
 
-  // State untuk input produk baru
   const [newProduct, setNewProduct] = useState({
     nama: "",
     deskripsi: "",
     stok: 0,
     lokasi: "",
     kategori: "",
-    foto: "",
-    selectedImage: "",
     harga: "",
+    imageFile: null,
   });
 
-  // State untuk produk yang sedang diedit
   const [editProduct, setEditProduct] = useState(null);
 
-  // Ambil role user dari localStorage
+  // --- VARIABLES & DERIVED STATE ---
   const role = localStorage.getItem("role");
-
-  // useEffect untuk mengambil data produk, lokasi, dan kategori saat komponen mount
-  useEffect(() => {
-    const fetchItems = async () => {
-      try {
-        const res = await API.get("/items");
-        setItems(res.data);
-      } catch (err) {
-        toast.error("Gagal mengambil data produk");
-      }
-    };
-
-    const fetchLocations = async () => {
-      try {
-        const res = await API.get("/locations");
-        setLocations(res.data);
-      } catch (err) {
-        toast.error("Gagal mengambil data lokasi");
-      }
-    };
-
-    const fetchCategories = async () => {
-      try {
-        const res = await getCategories();
-        setCategories(res);
-      } catch (err) {
-        toast.error("Gagal mengambil data kategori");
-      }
-    };
-
-    fetchItems();
-    fetchLocations();
-    fetchCategories();
-  }, []);
-
-  // Filter produk berdasarkan kategori yang dipilih
   const filteredItems = selectedCategoryFilter
     ? items.filter(item => {
-        if (typeof item.kategori === "object" && item.kategori !== null) {
-          return item.kategori._id === selectedCategoryFilter;
-        }
-        return item.kategori === selectedCategoryFilter;
+        const itemCategoryId = typeof item.kategori === "object" && item.kategori !== null ? item.kategori._id : item.kategori;
+        return itemCategoryId === selectedCategoryFilter;
       })
     : items;
 
-  // Handler perubahan input nama kategori baru
-  const handleCategoryNameChange = (e) => {
-    setNewCategoryName(e.target.value);
-  };
+  // --- EFFECTS ---
 
-  // Handler submit tambah kategori baru
+  // Effect untuk mengunci scroll body saat modal terbuka.
+  useEffect(() => {
+    const isModalOpen = showCategoryModal || showProductModal || showEditModal;
+    if (isModalOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = 'unset';
+    }
+    return () => {
+      document.body.style.overflow = 'unset';
+    };
+  }, [showCategoryModal, showProductModal, showEditModal]);
+
+  // Effect untuk mengambil semua data awal saat komponen mount.
+  useEffect(() => {
+    const fetchAllData = async () => {
+      try {
+        const [itemsRes, locationsRes, categoriesRes] = await Promise.all([
+          API.get("/items"),
+          API.get("/locations"),
+          getCategories()
+        ]);
+        setItems(itemsRes.data);
+        setLocations(locationsRes.data);
+        setCategories(Array.isArray(categoriesRes) ? categoriesRes : []);
+      } catch (err) {
+        toast.error("Gagal memuat data awal dari server.");
+      }
+    };
+    fetchAllData();
+  }, []);
+
+  // --- EVENT HANDLERS ---
+
+  const handleCategoryNameChange = (e) => setNewCategoryName(e.target.value);
+
   const handleAddCategory = async (e) => {
     e.preventDefault();
+    if (!newCategoryName.trim()) return toast.error("Nama kategori tidak boleh kosong.");
     try {
-      await addCategory({ nama: newCategoryName });
+      const response = await addCategory({ nama: newCategoryName.trim() });
       toast.success("Kategori berhasil ditambahkan!");
       setShowCategoryModal(false);
       setNewCategoryName("");
-      const res = await getCategories();
-      setCategories(res);
+      // Refetch categories from backend to ensure fresh data
+      const freshCategories = await getCategories();
+      setCategories(Array.isArray(freshCategories) ? freshCategories : []);
     } catch (err) {
-      toast.error("Gagal menambahkan kategori");
+      toast.error(err.response?.data?.message || "Gagal menambahkan kategori.");
     }
   };
 
-  // Handler perubahan input produk baru
-  const handleNewProductChange = (e) => {
-    setNewProduct({ ...newProduct, [e.target.name]: e.target.value });
+  const handleDeleteCategory = async (categoryId, categoryName) => {
+    if (window.confirm(`Anda yakin ingin menghapus kategori "${categoryName}"?`)) {
+      try {
+        await API.delete(`/categories/${categoryId}`);
+        toast.success("Kategori berhasil dihapus!");
+        setCategories(prev => prev.filter(cat => cat._id !== categoryId));
+      } catch (err) {
+        toast.error("Gagal menghapus kategori.");
+      }
+    }
   };
+  
+  const handleNewProductChange = (e) => setNewProduct({ ...newProduct, [e.target.name]: e.target.value });
+  
+  const handleNewProductFileChange = (e) => setNewProduct(prev => ({ ...prev, imageFile: e.target.files[0] || null }));
 
-  // Handler submit tambah produk baru
   const handleAddProduct = async (e) => {
     e.preventDefault();
+    if (!newProduct.lokasi || !newProduct.kategori) return toast.error("Lokasi dan Kategori harus dipilih.");
     try {
-      // kategori sekarang berupa id dari dropdown select
-      const kategoriId = newProduct.kategori;
-      if (!kategoriId) {
-        toast.error("Kategori harus dipilih");
-        return;
-      }
-      const productToSend = {
-        ...newProduct,
-        lokasi: newProduct.lokasi === "" ? null : (newProduct.lokasi || (locations.length > 0 ? locations[0]._id : null)),
-        kategori: kategoriId,
-        stok: Number(newProduct.stok),
-        harga: newProduct.harga === "" ? 0 : Number(newProduct.harga.replace(/[^0-9.-]+/g,"")), // Konversi harga ke angka, tangani string kosong dan hapus karakter non-numerik
-      };
-      if (!productToSend.lokasi || !productToSend.kategori) {
-        toast.error("Lokasi dan Kategori harus dipilih");
-        return;
-      }
-      const response = await API.post("/items", productToSend);
+      const formData = new FormData();
+      formData.append('nama', newProduct.nama);
+      formData.append('deskripsi', newProduct.deskripsi);
+      formData.append('stok', Number(newProduct.stok));
+      formData.append('harga', Number(newProduct.harga) || 0);
+      formData.append('lokasi', newProduct.lokasi);
+      formData.append('kategori', newProduct.kategori);
+      if (newProduct.imageFile) formData.append('foto', newProduct.imageFile);
+
+      const response = await API.post("/items", formData);
       toast.success("Produk berhasil ditambahkan!");
       setShowProductModal(false);
-      setNewProduct({
-        nama: "",
-        deskripsi: "",
-        stok: 0,
-        lokasi: locations.length > 0 ? locations[0]._id : "",
-        kategori: "",
-        foto: "",
-        selectedImage: "",
-        harga: "", // Reset field harga
-      });
-      // Tambahkan produk baru secara optimistik ke state items, override deskripsi dengan input form
-      setItems(prevItems => [...prevItems, { ...response.data, deskripsi: newProduct.deskripsi }]);
+      setNewProduct({ nama: "", deskripsi: "", stok: 0, lokasi: "", kategori: "", harga: "", imageFile: null });
+      setItems(prevItems => [...prevItems, response.data]);
     } catch (err) {
-      const message = err.response?.data?.message || "Gagal menambahkan produk";
-      toast.error(message);
+      toast.error(err.response?.data?.message || "Gagal menambahkan produk.");
     }
   };
-
-  // Buka modal edit produk dengan data produk yang dipilih
+  
   const openEditModal = (item) => {
     setEditProduct({
       ...item,
       deskripsi: item.deskripsi || "",
       kategori: typeof item.kategori === "object" && item.kategori !== null ? item.kategori._id : item.kategori,
       lokasi: item.lokasi?._id || item.lokasi || "",
+      imageFile: null,
+      foto: item.foto ? `${IMAGE_BASE_URL}${item.foto.startsWith('/') ? item.foto : '/' + item.foto}` : null
     });
     setShowEditModal(true);
   };
+  
+  const handleEditProductChange = (e) => setEditProduct({ ...editProduct, [e.target.name]: e.target.value });
 
-  // Handler perubahan input edit produk
-  const handleEditProductChange = (e) => {
-    setEditProduct({ ...editProduct, [e.target.name]: e.target.value });
+  const handleEditProductFileChange = (e) => {
+    const file = e.target.files[0] || null;
+    setEditProduct(prev => ({
+      ...prev,
+      imageFile: file,
+      foto: file ? URL.createObjectURL(file) : (prev.foto || null)
+    }));
   };
 
-  // Handler submit update produk
   const handleUpdateProduct = async (e) => {
     e.preventDefault();
+    if (!editProduct.lokasi || !editProduct.kategori) return toast.error("Lokasi dan Kategori harus dipilih.");
     try {
-      const productToUpdate = {
-        ...editProduct,
-        stok: Number(editProduct.stok),
-        lokasi: editProduct.lokasi === "" ? null : editProduct.lokasi,
-        harga: editProduct.harga === "" ? 0 : Number(editProduct.harga.replace(/[^0-9.-]+/g,"")), // Konversi harga ke angka, tangani string kosong dan hapus karakter non-numerik
-        deskripsi: editProduct.deskripsi || "",
-      };
-      const response = await API.put(`/items/${editProduct._id}`, productToUpdate);
+      const formData = new FormData();
+      formData.append('nama', editProduct.nama);
+      formData.append('deskripsi', editProduct.deskripsi || "");
+      formData.append('stok', Number(editProduct.stok));
+      formData.append('harga', Number(editProduct.harga) || 0);
+      formData.append('lokasi', editProduct.lokasi);
+      formData.append('kategori', editProduct.kategori);
+      if (editProduct.imageFile) formData.append('foto', editProduct.imageFile);
+      
+      const response = await API.put(`/items/${editProduct._id}`, formData);
       toast.success("Produk berhasil diperbarui!");
       setShowEditModal(false);
       setEditProduct(null);
-      // Update state items secara optimistik dengan produk yang diperbarui termasuk deskripsi
       setItems(prevItems => prevItems.map(item => item._id === response.data._id ? response.data : item));
     } catch (err) {
-      const message = err.response?.data?.message || "Gagal memperbarui produk";
-      toast.error(message);
+      toast.error(err.response?.data?.message || "Gagal memperbarui produk.");
     }
   };
 
+  const handleDeleteProduct = async (item) => {
+    if (window.confirm(`Anda yakin ingin menghapus produk "${item.nama}"?`)) {
+      try {
+        await API.delete(`/items/${item._id}`);
+        toast.success("Produk berhasil dihapus!");
+        setItems(prevItems => prevItems.filter(i => i._id !== item._id));
+      } catch (err) {
+        toast.error("Gagal menghapus produk.");
+      }
+    }
+  };
+
+  // --- RENDER COMPONENT ---
   return (
     <div className="p-4 sm:p-6 md:p-8">
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 gap-4 sm:gap-0">
-        <h1 className="text-xl sm:text-2xl font-bold">Inventaris Barang</h1>
-        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2">
-          <label htmlFor="categoryFilter" className="mr-0 sm:mr-2 font-medium">Filter Kategori:</label>
-          <select
-            id="categoryFilter"
-            value={selectedCategoryFilter}
-            onChange={(e) => setSelectedCategoryFilter(e.target.value)}
-            className="border rounded px-2 py-1 w-full sm:w-auto"
-          >
-            <option value="">Semua Kategori</option>
-            {categories.map((cat) => (
-              <option key={cat._id} value={cat._id}>
-                {cat.nama}
-              </option>
-            ))}
-          </select>
-        </div>
-        {role === "manager" && (
-          <div className="flex flex-col sm:flex-row justify-start items-start sm:items-center gap-2">
-            <button
-              className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 w-full sm:w-auto"
-              onClick={() => setShowCategoryModal(true)}
+      <div className="flex flex-col md:flex-row justify-between items-center mb-6 gap-4">
+        <h1 className="text-2xl font-bold text-gray-800 shrink-0">Inventaris Barang</h1>
+        <div className="flex flex-col sm:flex-row items-center gap-3 w-full md:w-auto">
+          <div className="w-full sm:w-auto">
+            <label htmlFor="categoryFilter" className="sr-only">Filter Kategori:</label>
+            <select
+              id="categoryFilter"
+              value={selectedCategoryFilter}
+              onChange={(e) => setSelectedCategoryFilter(e.target.value)}
+              className="border rounded-md px-3 py-2 w-full text-sm"
             >
-              + Tambah Kategori
-            </button>
-            <button
-              className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700 w-full sm:w-auto"
-              onClick={() => setShowProductModal(true)}
-            >
-              + Tambah Produk
-            </button>
+              <option value="">Semua Kategori</option>
+              {categories.map((cat) => (<option key={cat._id} value={cat._id}>{cat.nama}</option>))}
+            </select>
           </div>
-        )}
+          {role === "manager" && (
+            <div className="flex items-center gap-2 w-full sm:w-auto">
+              {/* Tombol dengan warna asli */}
+              <button
+                className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 w-full sm:w-auto text-sm"
+                onClick={() => setShowCategoryModal(true)}
+              >
+                Kategori
+              </button>
+              <button
+                className="bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700 w-full sm:w-auto text-sm"
+                onClick={() => setShowProductModal(true)}
+              >
+                + Produk
+              </button>
+            </div>
+          )}
+        </div>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-6">
-          {filteredItems.map((item) => {
-            const category = categories.find(cat => {
-              if (typeof item.kategori === "object" && item.kategori !== null) {
-                return cat._id === item.kategori._id;
-              } else if (typeof item.kategori === "string") {
-                return cat._id === item.kategori;
-              }
-              return false;
-            });
-            const location = locations.find(loc => {
-              if (typeof item.lokasi === "object" && item.lokasi !== null) {
-                return loc._id === item.lokasi._id;
-              } else if (typeof item.lokasi === "string") {
-                return loc._id === item.lokasi;
-              }
-              return false;
-            });
-            return (
-              <div key={item._id} className="border rounded shadow p-4 flex flex-col">
-              <p className="text-sm font-medium mb-2">
-                Stok: {item.stok}
-              </p>
-              <div className="h-40 bg-gray-100 flex items-center justify-center mb-4">
-                {item.foto ? (
-                  <img
-                    src={item.foto}
-                    alt={item.nama}
-                    className="max-h-full max-w-full object-contain"
-                  />
-                ) : (
-                  <span className="text-gray-400">No Image</span>
-                )}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+        {filteredItems.map((item) => {
+          const category = categories.find(cat => (typeof item.kategori === 'object' ? cat._id === item.kategori?._id : cat._id === item.kategori));
+          const location = locations.find(loc => (typeof item.lokasi === 'object' ? loc._id === item.lokasi?._id : loc._id === item.lokasi));
+          const imageUrl = item.foto ? `${IMAGE_BASE_URL}${item.foto.startsWith('/') ? item.foto : '/' + item.foto}` : null;
+          return (
+            <div key={item._id} className="border rounded-lg shadow-md p-4 flex flex-col bg-white transition-shadow hover:shadow-xl">
+              <div className="relative">
+                <div className="aspect-square bg-gray-100 rounded-md flex items-center justify-center mb-4">
+                  {imageUrl ? (<img src={imageUrl} alt={item.nama} className="max-h-full max-w-full object-contain"/>) : (<span className="text-gray-400">No Image</span>)}
+                </div>
+                <p className="absolute top-2 right-2 bg-gray-800 text-white text-xs font-bold px-2 py-1 rounded">Stok: {item.stok}</p>
               </div>
-              <h2 className="text-lg font-semibold mb-2">{item.nama}</h2>
-              <p className="text-sm text-gray-600 mb-2 whitespace-pre-wrap break-words">
-                {item.deskripsi || "Deskripsi tidak tersedia"}
-              </p>
-              <p className="text-sm font-medium mb-2">
-                Kategori: {category ? category.nama : "Tidak ada"}
-              </p>
-              <p className="text-sm font-medium mb-2">
-                Lokasi: {location ? location.nama_lokasi : "Tidak ada"}
-              </p>
-              <p className="text-sm font-medium mb-4">
-                Harga: {item.harga ? `Rp ${item.harga.toLocaleString()}` : "N/A"}
-              </p>
-              <div className="flex gap-2 mt-auto">
-                <button
-                  onClick={() => openEditModal(item)}
-                  className="bg-yellow-500 text-white px-3 py-1 rounded text-sm"
-                >
-                  Edit
-                </button>
-                {role === "manager" && (
-                  <button
-                    onClick={async () => {
-                      if (window.confirm(`Hapus produk ${item.nama}?`)) {
-                        try {
-                          await API.delete(`/items/${item._id}`);
-                          toast.success("Produk berhasil dihapus");
-                          const res = await API.get("/items");
-                          setItems(res.data);
-                        } catch (err) {
-                          toast.error("Gagal menghapus produk");
-                        }
-                      }
-                    }}
-                    className="bg-red-600 text-white px-3 py-1 rounded text-sm"
-                  >
-                    Hapus
-                  </button>
-                )}
+              <h2 className="text-lg font-semibold mb-2 text-gray-800 truncate">{item.nama}</h2>
+              <p className="text-sm text-gray-600 mb-4 flex-grow">{item.deskripsi || "Deskripsi tidak tersedia."}</p>
+              <p className="text-sm font-medium text-gray-700">Kategori: <span className="font-normal">{category ? category.nama : "N/A"}</span></p>
+              <p className="text-sm font-medium text-gray-700">Lokasi: <span className="font-normal">{location ? location.nama_lokasi : "N/A"}</span></p>
+              {/* Harga dengan warna asli */}
+              <p className="text-lg font-bold text-green-700 mt-2 mb-4">{item.harga ? `Rp ${item.harga.toLocaleString('id-ID')}` : "Harga N/A"}</p>
+              <div className="flex gap-2 mt-auto border-t pt-3">
+                {/* Tombol edit/hapus dengan warna asli */}
+                <button onClick={() => openEditModal(item)} className="bg-yellow-500 text-white px-3 py-1.5 rounded text-sm w-full">Edit</button>
+                {role === "manager" && (<button onClick={() => handleDeleteProduct(item)} className="bg-red-600 text-white px-3 py-1.5 rounded text-sm w-full">Hapus</button>)}
               </div>
-              </div>
-            );
-          })}
+            </div>
+          );
+        })}
       </div>
+
+      {/* --- MODALS --- */}
+      {[showCategoryModal, showProductModal, showEditModal].some(Boolean) && (
+        <div className="fixed inset-0 bg-black/60 z-50 overflow-y-auto flex justify-center items-start py-10 px-4">
+          
+          {showCategoryModal && (
+            <div className="bg-white p-6 rounded-lg shadow-xl w-full max-w-md animate-fade-in-down">
+              <h2 className="text-xl font-bold mb-4">Kelola Kategori</h2>
+              <form onSubmit={handleAddCategory} className="space-y-4">
+                <input type="text" name="nama" placeholder="Ketik nama kategori baru..." value={newCategoryName} onChange={handleCategoryNameChange} required className="w-full px-3 py-2 border rounded"/>
+                <div className="max-h-48 overflow-auto mt-2 border rounded p-2 bg-gray-50">
+                  {categories.map((cat) => (<div key={cat._id} className="flex justify-between items-center p-1 hover:bg-gray-100 rounded"><span>{cat.nama}</span><button type="button" onClick={() => handleDeleteCategory(cat._id, cat.nama)} className="text-red-600 hover:text-red-800 font-semibold text-xs">Hapus</button></div>))}
+                </div>
+                <div className="flex justify-end gap-2 pt-4 border-t">
+                  <button type="button" onClick={() => setShowCategoryModal(false)} className="px-4 py-2 bg-zinc-300 rounded hover:bg-zinc-400">Tutup</button>
+                  <button type="submit" className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">Simpan Baru</button>
+                </div>
+              </form>
+            </div>
+          )}
+
+          {showProductModal && (
+            <div className="bg-white p-6 rounded-lg shadow-xl w-full max-w-md animate-fade-in-down">
+              <h2 className="text-xl font-bold mb-4">Tambah Produk Baru</h2>
+              <form onSubmit={handleAddProduct} className="space-y-4">
+                <div>
+                  <label htmlFor="nama" className="block mb-1 font-medium">Nama Produk</label>
+                  <input
+                    type="text"
+                    id="nama"
+                    name="nama"
+                    value={newProduct.nama}
+                    onChange={handleNewProductChange}
+                    required
+                    className="w-full border rounded px-3 py-2"
+                  />
+                </div>
+                <div>
+                  <label htmlFor="deskripsi" className="block mb-1 font-medium">Deskripsi</label>
+                  <textarea
+                    id="deskripsi"
+                    name="deskripsi"
+                    value={newProduct.deskripsi}
+                    onChange={handleNewProductChange}
+                    className="w-full border rounded px-3 py-2"
+                    rows={3}
+                  />
+                </div>
+                <div>
+                  <label htmlFor="stok" className="block mb-1 font-medium">Stok</label>
+                  <input
+                    type="number"
+                    id="stok"
+                    name="stok"
+                    value={newProduct.stok}
+                    onChange={handleNewProductChange}
+                    min={0}
+                    required
+                    className="w-full border rounded px-3 py-2"
+                  />
+                </div>
+                <div>
+                  <label htmlFor="lokasi" className="block mb-1 font-medium">Lokasi</label>
+                  <select
+                    id="lokasi"
+                    name="lokasi"
+                    value={newProduct.lokasi}
+                    onChange={handleNewProductChange}
+                    required
+                    className="w-full border rounded px-3 py-2"
+                  >
+                    <option value="">Pilih lokasi</option>
+                    {locations.map(loc => (
+                      <option key={loc._id} value={loc._id}>{loc.nama_lokasi}</option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label htmlFor="kategori" className="block mb-1 font-medium">Kategori</label>
+                  <select
+                    id="kategori"
+                    name="kategori"
+                    value={newProduct.kategori}
+                    onChange={handleNewProductChange}
+                    required
+                    className="w-full border rounded px-3 py-2"
+                  >
+                    <option value="">Pilih kategori</option>
+                    {categories.map(cat => (
+                      <option key={cat._id} value={cat._id}>{cat.nama}</option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label htmlFor="harga" className="block mb-1 font-medium">Harga</label>
+                  <input
+                    type="number"
+                    id="harga"
+                    name="harga"
+                    value={newProduct.harga}
+                    onChange={handleNewProductChange}
+                    min={0}
+                    className="w-full border rounded px-3 py-2"
+                  />
+                </div>
+                <div>
+                  <label htmlFor="imageFile" className="block mb-1 font-medium">Foto Produk</label>
+                  <input
+                    type="file"
+                    id="imageFile"
+                    name="imageFile"
+                    accept="image/*"
+                    onChange={handleNewProductFileChange}
+                    className="w-full"
+                  />
+                </div>
+                <div className="flex justify-end gap-2 pt-4 border-t">
+                  <button type="button" onClick={() => setShowProductModal(false)} className="px-4 py-2 bg-zinc-300 rounded hover:bg-zinc-400">Batal</button>
+                  <button type="submit" className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700">Simpan</button>
+                </div>
+              </form>
+            </div>
+          )}
+
+          {showEditModal && editProduct && (
+            <div className="bg-white p-6 rounded-lg shadow-xl w-full max-w-md animate-fade-in-down">
+              <h2 className="text-xl font-bold mb-4">Edit Produk</h2>
+              <form onSubmit={handleUpdateProduct} className="space-y-4">
+                <div>
+                  <label htmlFor="nama" className="block mb-1 font-medium">Nama Produk</label>
+                  <input
+                    type="text"
+                    id="nama"
+                    name="nama"
+                    value={editProduct.nama}
+                    onChange={handleEditProductChange}
+                    required
+                    className="w-full border rounded px-3 py-2"
+                  />
+                </div>
+                <div>
+                  <label htmlFor="deskripsi" className="block mb-1 font-medium">Deskripsi</label>
+                  <textarea
+                    id="deskripsi"
+                    name="deskripsi"
+                    value={editProduct.deskripsi}
+                    onChange={handleEditProductChange}
+                    className="w-full border rounded px-3 py-2"
+                    rows={3}
+                  />
+                </div>
+                <div>
+                  <label htmlFor="stok" className="block mb-1 font-medium">Stok</label>
+                  <input
+                    type="number"
+                    id="stok"
+                    name="stok"
+                    value={editProduct.stok}
+                    onChange={handleEditProductChange}
+                    min={0}
+                    required
+                    className="w-full border rounded px-3 py-2"
+                  />
+                </div>
+                <div>
+                  <label htmlFor="lokasi" className="block mb-1 font-medium">Lokasi</label>
+                  <select
+                    id="lokasi"
+                    name="lokasi"
+                    value={editProduct.lokasi}
+                    onChange={handleEditProductChange}
+                    required
+                    className="w-full border rounded px-3 py-2"
+                  >
+                    <option value="">Pilih lokasi</option>
+                    {locations.map(loc => (
+                      <option key={loc._id} value={loc._id}>{loc.nama_lokasi}</option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label htmlFor="kategori" className="block mb-1 font-medium">Kategori</label>
+                  <select
+                    id="kategori"
+                    name="kategori"
+                    value={editProduct.kategori}
+                    onChange={handleEditProductChange}
+                    required
+                    className="w-full border rounded px-3 py-2"
+                  >
+                    <option value="">Pilih kategori</option>
+                    {categories.map(cat => (
+                      <option key={cat._id} value={cat._id}>{cat.nama}</option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label htmlFor="harga" className="block mb-1 font-medium">Harga</label>
+                  <input
+                    type="number"
+                    id="harga"
+                    name="harga"
+                    value={editProduct.harga}
+                    onChange={handleEditProductChange}
+                    min={0}
+                    className="w-full border rounded px-3 py-2"
+                  />
+                </div>
+                <div>
+                  <label htmlFor="imageFile" className="block mb-1 font-medium">Foto Produk</label>
+                  <input
+                    type="file"
+                    id="imageFile"
+                    name="imageFile"
+                    accept="image/*"
+                    onChange={handleEditProductFileChange}
+                    className="w-full"
+                  />
+                </div>
+                <div className="flex justify-end gap-2 pt-4 border-t">
+                  <button type="button" onClick={() => setShowEditModal(false)} className="px-4 py-2 bg-zinc-300 rounded hover:bg-zinc-400">Batal</button>
+                  <button type="submit" className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700">Simpan Perubahan</button>
+                </div>
+              </form>
+            </div>
+          )}
+
+        </div>
+      )}
     </div>
   );
 }

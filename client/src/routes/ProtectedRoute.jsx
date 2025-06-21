@@ -10,15 +10,17 @@ import { Navigate } from "react-router-dom";
 import { AuthContext } from "../context/AuthContext";
 
 export default function ProtectedRoute({ children }) {
-    // Mengambil token dari context autentikasi
-    const { token } = useContext(AuthContext);
+    const { isAuthenticated, loading } = useContext(AuthContext);
 
-    // Jika token tidak ada, redirect ke halaman login
-    if (!token) {
+    if (loading) {
+        // While loading, render null or a spinner
+        return null;
+    }
+
+    if (!loading && !isAuthenticated) {
         console.log("No token found, redirecting to login");
         return <Navigate to="/" replace />;
     }
 
-    // Jika token ada, render children (komponen yang dilindungi)
     return children;
 }

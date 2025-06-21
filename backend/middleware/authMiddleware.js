@@ -13,6 +13,9 @@ import jwt from 'jsonwebtoken';
  * Jika token tidak ada atau tidak valid, mengembalikan response 401 Unauthorized
  */
 export const verifyToken = (req, res, next) => {
+    console.log("Auth Middleware: Headers:", req.headers);
+    console.log("Auth Middleware: Cookies:", req.cookies);
+
     const authHeader = req.headers.authorization || req.cookies.token;
 
     let token;
@@ -23,14 +26,17 @@ export const verifyToken = (req, res, next) => {
     }
 
     if (!token) {
+        console.log("Auth Middleware: No token provided.");
         return res.status(401).json({ message: 'Access denied. No token provided.' });
     }
 
     try {
         const decoded = jwt.verify(token, process.env.JWT_SECRET || 'supzg-secret');
         req.user = decoded;
+        console.log("Auth Middleware: Token verified successfully.");
         next();
     } catch (err) {
+        console.log("Auth Middleware: Invalid token.", err.message);
         return res.status(401).json({ message: 'Invalid token.' });
     }
 };

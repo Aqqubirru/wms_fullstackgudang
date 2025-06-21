@@ -6,18 +6,10 @@
  * Menyimpan data transaksi default di localStorage jika belum ada
  */
 
-import { useState, useEffect } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
-// import './App.css'
-
+import { useState, useEffect, useContext } from 'react'
 import AppRoutes from './routes/AppRoutes';
-import { Toaster } from "react-hot-toast";
-
-import Sidebar from "./components/Sidebar";
-import Navbar from "./components/Navbar";
-import Dashboard from "./pages/Dashboard";
-import * as jwt_decode from "jwt-decode";
+import { AuthContext } from './context/AuthContext';
+import API from './api/axiosInstance';
 
 // Menyimpan data transaksi default di localStorage jika belum ada
 if (!localStorage.getItem("transactionsData")) {
@@ -65,34 +57,42 @@ if (!localStorage.getItem("transactionsData")) {
 }
 
 function App() {
-  // State untuk menyimpan status autentikasi user
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const { login, logout, loading, setLoading, token } = useContext(AuthContext);
 
-  // Mengecek token JWT di localStorage saat komponen mount
   useEffect(() => {
-    const token = localStorage.getItem("token");
-    if (token) {
+    console.log("App component mounted. Starting session verification...");
+    const verifySession = async () => {
+      setLoading(true);
       try {
-        const decoded = jwt_decode.default(token);
-        const currentTime = Date.now() / 1000;
-        // Jika token belum expired, set isAuthenticated true
-        if (decoded.exp > currentTime) {
-          setIsAuthenticated(true);
+        const response = await API.get('/auth/verify');
+        console.log("Session verification successful. Response:", response.data);
+        if (response.data.success) {
+          const user = response.data.user;
+          // Since token is HTTP-only cookie, we cannot get token string, so pass placeholder token
+          login("valid-token", user.role, user);
         } else {
-          // Jika token expired, hapus localStorage dan set false
-          localStorage.clear();
-          setIsAuthenticated(false);
+          // Do not logout immediately, just keep user logged in
+          console.warn("Session verification failed: success false");
         }
       } catch (error) {
-        // Jika error decode token, hapus localStorage dan set false
-        localStorage.clear();
-        setIsAuthenticated(false);
+        console.error("Session verification failed. Error:", error.response ? error.response.data : error.message);
+        // Do not logout immediately on 401 to prevent redirect on refresh
+        if (error.response && error.response.status !== 401) {
+          logout();
+        }
+      } finally {
+        setLoading(false);
       }
-    }
+    };
+
+    verifySession();
   }, []);
 
-  // Render routing aplikasi dengan prop isAuthenticated
-  return <AppRoutes isAuthenticated={isAuthenticated} />;
+  if (loading) {
+    return <div>Loading...</div>; // Or a spinner component
+  }
+
+  return <AppRoutes isAuthenticated={!!token} />;
 }
 
 export default App;

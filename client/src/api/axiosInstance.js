@@ -8,19 +8,12 @@ import axios from "axios";
 
 const API = axios.create({
   baseURL: "http://localhost:5000/api",
-  withCredentials: false, // Disable sending cookies, use Authorization header instead
+  withCredentials: true, // Enable sending cookies for authentication
 });
 
-// Menambahkan interceptor request untuk menyisipkan token Authorization
-API.interceptors.request.use(
-  (config) => {
-    const token = localStorage.getItem("token");
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
-    }
-    return config;
-  },
-  (error) => Promise.reject(error)
-);
+/**
+ * Removed Authorization header interceptor because token is stored in HTTP-only cookie.
+ * Authentication will rely solely on cookies sent with requests.
+ */
 
 export default API;

@@ -129,7 +129,7 @@ export default function Transactions() {
                         >
                             + Tambah Transaksi
                         </button>
-                        {!deleteMode && (
+                        {role === "manager" && !deleteMode && (
                             <button
                                 onClick={() => setDeleteMode(true)}
                                 className="bg-red-600 text-white px-3 py-1.5 rounded whitespace-nowrap text-sm"

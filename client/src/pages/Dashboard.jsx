@@ -82,27 +82,39 @@ export default function Dashboard() {
         // Filter data transaksi berdasarkan filter tanggal dan produk
         let filtered = [...transaksi];
         if (filterTanggal) {
-            const tanggalString = filterTanggal.toISOString().split("T")[0];
-            filtered = filtered.filter((t) => t.tanggal === tanggalString);
+            const filterDateString = filterTanggal.toISOString().split("T")[0];
+            filtered = filtered.filter((t) => {
+                // Extract date part from t.tanggal, assuming t.tanggal may include time
+                const transactionDate = t.tanggal ? t.tanggal.split("T")[0] : "";
+                return transactionDate === filterDateString;
+            });
         }
         if (filterProduk) {
-            filtered = filtered.filter((t) => t.produk === filterProduk);
+            filtered = filtered.filter((t) => {
+                if (typeof t.produk === 'object' && t.produk !== null) {
+                    return t.produk.nama === filterProduk;
+                }
+                return t.produk === filterProduk;
+            });
         }
 
         // Pisahkan transaksi yang statusnya pending dan approved
         const pending = filtered.filter((t) => t.status === "pending");
         const approved = filtered.filter((t) => t.status === "approved");
 
+        // Filter items by selected product if filterProduk is set
+        const filteredItems = filterProduk ? items.filter(item => item.nama === filterProduk) : items;
+
         // Set ringkasan data produk, lokasi, user aktif, dan transaksi pending
         setSummary({
-            produk: items.length,
+            produk: filteredItems.length,
             lokasi: lokasi.length,
             users: users.filter((u) => u.status === "aktif").length,
             pending: pending.length,
         });
 
-        // Ambil 5 produk dengan stok terbanyak
-        setTopProduk([...items].sort((a, b) => b.stok - a.stok).slice(0, 5));
+        // Ambil 5 produk dengan stok terbanyak dari filtered items
+        setTopProduk([...filteredItems].sort((a, b) => b.stok - a.stok).slice(0, 5));
         // Ambil 5 transaksi terbaru setelah filter
         setLatestTransaksi(filtered.slice(-5).reverse());
         // Hitung total barang masuk dan keluar
@@ -213,6 +225,23 @@ export default function Dashboard() {
                 <SummaryCard title="User Aktif" value={summary.users} color="bg-green-100" />
                 <SummaryCard title="Pending" value={summary.pending} color="bg-red-100" />
             </div>
+
+            {/* Peringatan Produk Menipis */}
+            <div className="mb-6 p-4 bg-yellow-100 border border-yellow-400 rounded text-yellow-800">
+                <h3 className="font-semibold mb-2">Peringatan: Produk Menipis</h3>
+                {items.filter(item => item.stok <= 5).length === 0 ? (
+                    <p>Tidak ada produk yang menipis.</p>
+                ) : (
+                    <ul className="list-disc list-inside max-h-40 overflow-auto">
+                        {items.filter(item => item.stok <= 5).map(item => (
+                            <li key={item._id || item.id}>
+                                {item.nama} - Stok tersisa: {item.stok}
+                            </li>
+                        ))}
+                    </ul>
+                )}
+            </div>
+
             {/* Grafik */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
                 {/* Pie */}
@@ -309,7 +338,7 @@ export default function Dashboard() {
 
                 {/* Top Produk */}
                 <div className="bg-white shadow rounded p-4">
-                    <h2 className="text-lg font-bold mb-2">Top 5 Produk Terbanyak</h2>
+                    <h2 className="text-lg font-bold mb-2">Top 5 Produk Terlaris</h2>
                     {topProduk.length === 0 ? (
                         <p className="text-sm text-zinc-500">Belum ada produk</p>
                     ) : (

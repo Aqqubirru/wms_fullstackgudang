@@ -26,8 +26,9 @@ export const getAllItems = async (req, res) => {
  * Menyimpan item baru ke database dan mengembalikan data item yang baru dibuat
  */
 export const createItem = async (req, res) => {
-    const { nama, deskripsi, stok, lokasi, kategori, foto, harga } = req.body;
+    const { nama, deskripsi, stok, lokasi, kategori, harga } = req.body;
     try {
+        const foto = req.file ? "/uploads/" + req.file.filename : req.body.foto;
         const newItem = new Item({ nama, deskripsi, stok, lokasi, kategori, foto, harga });
         await newItem.save();
         res.status(201).json(newItem);
@@ -43,8 +44,9 @@ export const createItem = async (req, res) => {
  */
 export const updateItem = async (req, res) => {
     const { id } = req.params;
-    const { nama, deskripsi, stok, lokasi, kategori, foto, harga } = req.body;
+    const { nama, deskripsi, stok, lokasi, kategori, harga } = req.body;
     try {
+        const foto = req.file ? "/uploads/" + req.file.filename : req.body.foto;
         const updated = await Item.findByIdAndUpdate(
             id,
             { nama, deskripsi, stok, lokasi, kategori, foto, harga },

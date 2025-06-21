@@ -8,6 +8,7 @@ import User from '../models/User.js';
 import jwt from 'jsonwebtoken';
 import bcrypt from 'bcrypt'; // Digunakan untuk membandingkan hash password
 import { hashPassword } from '../utils/hashPassword.js';
+import { verifyToken } from '../middleware/authMiddleware.js';
 
 const router = express.Router();
 
@@ -44,6 +45,14 @@ router.post('/login', async (req, res) => {
     // Buat token JWT dengan payload id user dan masa berlaku 1 hari
     const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET || "supzg-secret", {
       expiresIn: '1d',
+    });
+
+    // Set token as HTTP-only cookie
+    res.cookie('token', token, {
+      httpOnly: true,
+      expires: new Date(Date.now() + 24 * 60 * 60 * 1000), // 24 hours
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: process.env.NODE_ENV === 'production' ? 'None' : 'Lax',
     });
 
     // Kirim token dan data user ke client
@@ -93,6 +102,19 @@ router.get('/me', async (req, res) => {
     });
   } catch (err) {
     res.status(401).json({ message: 'Invalid token' });
+  }
+});
+
+// New protected verify endpoint
+router.get('/verify', verifyToken, async (req, res) => {
+  try {
+    const user = await User.findById(req.user.id).select('-password');
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+    res.status(200).json({ success: true, user });
+  } catch (err) {
+    res.status(500).json({ message: 'Server error', error: err.message });
   }
 });
 

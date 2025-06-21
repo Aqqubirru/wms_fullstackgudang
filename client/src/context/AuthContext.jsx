@@ -18,6 +18,8 @@ export const AuthProvider = ({ children }) => {
   const [token, setToken] = useState(null);
   const [role, setRole] = useState(null);
   const [user, setUser] = useState(null);
+  const [loading, setLoading] = useState(true); // New loading state
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
 
   // Mengambil data autentikasi dari localStorage saat mount
   useEffect(() => {
@@ -27,6 +29,7 @@ export const AuthProvider = ({ children }) => {
 
     if (storedToken) {
       setToken(storedToken);
+      setIsAuthenticated(true);
     }
     if (storedRole) {
       setRole(storedRole);
@@ -34,6 +37,7 @@ export const AuthProvider = ({ children }) => {
     if (storedUser) {
       setUser(JSON.parse(storedUser));
     }
+    setLoading(false); // Set loading false after initialization
   }, []);
 
   // Fungsi login untuk menyimpan token, role, dan user ke state dan localStorage
@@ -41,6 +45,7 @@ export const AuthProvider = ({ children }) => {
     setToken(token);
     setRole(role);
     setUser(user);
+    setIsAuthenticated(true);
     localStorage.setItem("token", token);
     localStorage.setItem("role", role);
     localStorage.setItem("currentUser", JSON.stringify(user));
@@ -51,11 +56,12 @@ export const AuthProvider = ({ children }) => {
     setToken(null);
     setRole(null);
     setUser(null);
+    setIsAuthenticated(false);
     localStorage.clear();
   };
 
   return (
-    <AuthContext.Provider value={{ token, role, user, login, logout }}>
+    <AuthContext.Provider value={{ token, role, user, login, logout, loading, setLoading, isAuthenticated }}>
       {children}
     </AuthContext.Provider>
   );

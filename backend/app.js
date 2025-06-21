@@ -32,6 +32,16 @@ app.use(cors({
 app.use(express.json());
 app.use(cookieParser());
 
+// Serve static files from public/uploads for image access
+import path from "path";
+import { fileURLToPath } from "url";
+import { dirname } from "path";
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+
+app.use('/uploads', express.static(path.join(__dirname, 'public/uploads')));
+
 // Koneksi ke database MongoDB
 connectDB();
 
@@ -46,4 +56,4 @@ app.use("/api/categories", categoryRoutes);
 
 // Jalankan server pada port yang ditentukan di environment variable atau default 5000
 const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));
+app.listen(PORT, () => console.log(`🚀 Server running on ${PORT}`));

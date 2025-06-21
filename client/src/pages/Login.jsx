@@ -11,7 +11,7 @@ import { useState, useContext } from "react";
 import { useNavigate } from "react-router-dom";
 import { Eye, EyeOff } from "lucide-react";
 import toast from "react-hot-toast";
-import axios from "axios";
+import API from "../api/axiosInstance";
 import { AuthContext } from "../context/AuthContext";
 
 export default function Login() {
@@ -36,7 +36,7 @@ export default function Login() {
     setLoading(true);
 
     try {
-      const res = await axios.post("http://localhost:5000/api/auth/login", {
+      const res = await API.post("/auth/login", {
         identifier: form.identifier,
         password: form.password,
       });
