@@ -16,7 +16,7 @@
 **Project SupzG** is a full-featured **Warehouse Management System (WMS)** built using the **MERN Stack**. It includes features such as:
 
 - ✅ Role-based access (Manager & Staff)
-- 💻 Dashboard with Location, items, warning stock, and more features
+- 💻 Dashboard with Location, items, warning stock, export to excel, and more features
 - 📦 Inventory management (CRUD)
 - 📍 Location control
 - 🔄 Transaction management (approve/request)
