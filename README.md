@@ -52,6 +52,8 @@
 
 🎵 TikTok: <a href="https://www.tiktok.com/@zebiel21" target="_blank">@zeeb_21</a>
 
+follow guys :D thanks
+
 ## ⚙️ How to Run
 
 ### 🔧 Backend
