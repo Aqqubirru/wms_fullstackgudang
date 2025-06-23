@@ -20,7 +20,7 @@
 - 📦 Inventory management (CRUD)
 - 📍 Location control
 - 🔄 Transaction management (approve/request)
-- 🧑‍💼 User management
+- 🧑‍💼 User management (active/nonactive, hash passwords, and more)
 
 ---
 
