@@ -55,7 +55,7 @@
 follow guys :D thanks
 
 ## ⚙️ How to Run
-
+ "don't forget to connect the database"
 ### 🔧 Backend
 
 ```bash
@@ -67,5 +67,4 @@ node app.js
 Copy
 Edit
 cd frontend
-npm install
 npm run dev
