@@ -54,6 +54,8 @@
 
 follow guys :D thanks
 
+ © Copyright
+
 ## ⚙️ How to Run
  "don't forget to connect the database"
 ### 🔧 Backend
@@ -68,3 +70,4 @@ Copy
 Edit
 cd frontend
 npm run dev
+
