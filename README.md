@@ -44,7 +44,7 @@
 
 ## 💬 Author
 
-✍️ Aqbil (Aqqubirru)
+✍️ Aqbil (Aqqubirru) + Daffa Habib Fairuz (dehaep)
 
 📧 Email: aqbilhasyarasyadi21@gmail.com
 
@@ -70,4 +70,5 @@ Copy
 Edit
 cd frontend
 npm run dev
+
 
