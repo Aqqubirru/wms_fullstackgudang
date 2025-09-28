@@ -54,7 +54,7 @@
 
 follow guys :D thanks
 
- © Copyright
+ © Copyright Aqqubirru & dehaep
 
 ## ⚙️ How to Run
  "don't forget to connect the database"
@@ -70,5 +70,6 @@ Copy
 Edit
 cd frontend
 npm run dev
+
 
 
