@@ -19,7 +19,7 @@
 - 💻 Dashboard with Location, items, warning stock, export to excel, and more features
 - 📦 Inventory management (CRUD)
 - 📍 Location control
-- 🔄 Transaction management (approve/request, display user, more)
+- Transaction management (approve/request, display user, more)
 - User management (active/nonactive, hash passwords, and more)
 
 ---
@@ -70,6 +70,7 @@ Copy
 Edit
 cd frontend
 npm run dev
+
 
 
 
