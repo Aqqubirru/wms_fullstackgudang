@@ -20,7 +20,7 @@
 - 📦 Inventory management (CRUD)
 - 📍 Location control
 - 🔄 Transaction management (approve/request, display user, more)
-- 🧑‍💼 User management (active/nonactive, hash passwords, and more)
+- User management (active/nonactive, hash passwords, and more)
 
 ---
 
@@ -70,6 +70,7 @@ Copy
 Edit
 cd frontend
 npm run dev
+
 
 
 
