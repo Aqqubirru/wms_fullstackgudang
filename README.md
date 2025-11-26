@@ -11,7 +11,7 @@
 
 ----
 
-## 📦 Overview
+##  Overview
 
 **Project SupzG** is a full-featured **Warehouse Management System (WMS)** built using the **MERN Stack**. It includes features such as:
 
@@ -70,6 +70,7 @@ Copy
 Edit
 cd frontend
 npm run dev
+
 
 
 
