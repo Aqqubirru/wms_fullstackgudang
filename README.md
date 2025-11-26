@@ -46,7 +46,7 @@
 
 ✍️ Aqbil (Aqqubirru) + Daffa Habib Fairuz (dehaep)
 
-📧 Email: aqbilhasyarasyadi21@gmail.com
+Email: aqbilhasyarasyadi21@gmail.com
 
 📱 Instagram: <a href="https://instagram.com/bilbil.hr" target="_blank">@bilbil.hr</a>
 
@@ -70,6 +70,7 @@ Copy
 Edit
 cd frontend
 npm run dev
+
 
 
 
