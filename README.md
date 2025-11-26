@@ -24,7 +24,7 @@
 
 ---
 
-## 🧠 Tech Stack
+## Tech Stack
 
 - **Frontend:** React.js, Tailwind CSS, Axios
 - **Backend:** Node.js, Express.js
@@ -70,6 +70,7 @@ Copy
 Edit
 cd frontend
 npm run dev
+
 
 
 
