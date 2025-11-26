@@ -56,20 +56,21 @@ follow guys :D thanks
 
  © Copyright Aqqubirru & dehaep
 
-## ⚙️ How to Run
+## How to Run
  "don't forget to connect the database"
-### 🔧 Backend
+### Backend
 
 ```bash
 cd backend
 node app.js
 
-### 💻 Frontend
+### Frontend
 
 Copy
 Edit
 cd frontend
 npm run dev
+
 
 
 
