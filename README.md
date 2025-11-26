@@ -42,7 +42,7 @@
 
 ---
 
-## 💬 Author
+## Author
 
 ✍️ Aqbil (Aqqubirru) + Daffa Habib Fairuz (dehaep)
 
@@ -70,6 +70,7 @@ Copy
 Edit
 cd frontend
 npm run dev
+
 
 
 
