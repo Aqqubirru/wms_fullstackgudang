@@ -48,7 +48,7 @@
 
 📧 Email: aqbilhasyarasyadi21@gmail.com
 
-📱 Instagram: <a href="https://instagram.com/jbiel.hr" target="_blank">@jbiel.hr</a>
+📱 Instagram: <a href="https://instagram.com/bilbil.hr" target="_blank">@bilbil.hr</a>
 
 🎵 TikTok: <a href="https://www.tiktok.com/@balbelbillll" target="_blank">@jbielze</a>
 
@@ -70,6 +70,7 @@ Copy
 Edit
 cd frontend
 npm run dev
+
 
 
 
